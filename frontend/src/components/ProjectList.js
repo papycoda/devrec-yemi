@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { Plus, Bell, Clock, AlertCircle, User, X } from 'lucide-react';
+import { Plus, Bell, Clock, AlertCircle, User, X, LogOut } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const ProjectCard = ({ project, onClick }) => {
   const getPriorityColor = (priority) => {
@@ -275,9 +276,10 @@ const ProjectList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [selectedProject, setSelectedProject] = useState(null);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -321,6 +323,7 @@ const ProjectList = () => {
     setProjects(projects.map(p => p.id === updatedProject.id ? updatedProject : p));
   };
 
+
   const getStatusColumn = (status) => {
     switch (status) {
       case 'IN_PROGRESS':
@@ -337,6 +340,11 @@ const ProjectList = () => {
     { title: 'Doing', status: 'Doing' },
     { title: 'Done', status: 'Done' }
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -356,6 +364,12 @@ const ProjectList = () => {
             <Bell className="h-5 w-5 text-white" />
           </button>
         </div>
+        <button
+          onClick={handleLogout}
+          className="bg-white/20 p-2 rounded hover:bg-white/30 transition-colors duration-200"
+        >
+          <LogOut className="h-5 w-5 text-white" />
+        </button>
       </header>
       <div className="flex justify-center">
         <div className="flex space-x-4 overflow-x-auto pb-4 max-w-7xl">
@@ -380,8 +394,8 @@ const ProjectList = () => {
         />
       </Modal>
       <Modal isOpen={isNewProjectModalOpen} onClose={() => setIsNewProjectModalOpen(false)}>
-        <NewProjectModal 
-          onClose={() => setIsNewProjectModalOpen(false)} 
+        <NewProjectModal
+          onClose={() => setIsNewProjectModalOpen(false)}
           onProjectCreated={handleProjectCreated}
           users={users}
         />

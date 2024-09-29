@@ -1,12 +1,31 @@
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework import status
 from django.contrib.auth import get_user_model
 from .models import Project
-from .serializers import ProjectSerializer, UserSerializer
+from .serializers import ProjectSerializer, UserSerializer, RegisterSerializer
 
 User = get_user_model()
 
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response({
+            "user": {
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+            },
+            "message": "User created successfully."
+        }, status=status.HTTP_201_CREATED)
 
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()

@@ -4,7 +4,20 @@ import axios from 'axios';
 export const AuthContext = createContext();
 
 const isTokenExpired = (token) => {
-    // ... (keep this function as is)
+    if (!token) return true;
+
+    const payload = token.split('.')[1];
+    if (!payload) return true;
+
+    try {
+        const decodedPayload = atob(payload);
+        const { exp } = JSON.parse(decodedPayload);
+
+        return Date.now() >= exp * 1000;
+    } catch (error) {
+        console.error('Error decoding token:', error);
+        return true;
+    }
 };
 
 export const AuthProvider = ({ children }) => {
@@ -16,6 +29,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('refresh_token', refresh);
         axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
         setUser({ token: access });
+    }, []);
+
+    const logout = useCallback(() => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        delete axios.defaults.headers.common['Authorization'];
+        setUser(null);
     }, []);
 
     const refreshToken = useCallback(async () => {
@@ -32,14 +52,7 @@ export const AuthProvider = ({ children }) => {
             logout();
             return null;
         }
-    }, [setAuthTokens]);
-
-    const logout = useCallback(() => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        delete axios.defaults.headers.common['Authorization'];
-        setUser(null);
-    }, []);
+    }, [setAuthTokens, logout]);
 
     useEffect(() => {
         const initializeAuth = async () => {
@@ -74,7 +87,7 @@ export const AuthProvider = ({ children }) => {
                 const decodedPayload = atob(payload);
                 const { exp } = JSON.parse(decodedPayload);
                 const timeUntilExpiration = exp * 1000 - Date.now();
-                const refreshTime = Math.max(timeUntilExpiration - 60000, 0); 
+                const refreshTime = Math.max(timeUntilExpiration - 60000, 0);
 
                 timeoutId = setTimeout(checkTokenExpiration, refreshTime);
             }
@@ -102,8 +115,24 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const register = async (username, email, password) => {
+        try {
+            const response = await axios.post('http://localhost:8000/api/register/', {
+                username,
+                email,
+                password,
+            });
+            const { access, refresh } = response.data;
+            setAuthTokens(access, refresh);
+            return true;
+        } catch (error) {
+            console.error('Registration failed:', error);
+            return false;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, register }}>
             {children}
         </AuthContext.Provider>
     );
