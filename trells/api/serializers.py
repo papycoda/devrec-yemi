@@ -13,8 +13,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ProjectSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)
-    assigned_to = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), required=False
+    assigned_to = UserSerializer(read_only=True)
+    assigned_to_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+        source="assigned_to",
     )
 
     class Meta:
@@ -26,6 +31,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "status",
             "priority",
             "assigned_to",
+            "assigned_to_id",
             "created_by",
             "date_created",
         ]

@@ -1,7 +1,17 @@
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import PermissionDenied
+from rest_framework import generics
+from django.contrib.auth import get_user_model
 from .models import Project
-from .serializers import ProjectSerializer
+from .serializers import ProjectSerializer, UserSerializer
+
+User = get_user_model()
+
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class IsAdminOrAssignedUser(permissions.BasePermission):
