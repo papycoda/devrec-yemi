@@ -9,6 +9,7 @@ class Project(models.Model):
         ('DONE', 'Done'),
         ('ABANDONED', 'Abandoned'),
         ('CANCELED', 'Canceled'),
+        ('NOT_STARTED','Not Started')
     ]
     
     PRIORITY_CHOICES = [
