@@ -343,7 +343,7 @@ const ProjectList = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   if (loading) return <div>Loading...</div>;

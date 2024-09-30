@@ -115,12 +115,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (username, email, password) => {
+    const register = async (username, email, password, password2) => {
         try {
             const response = await axios.post('http://localhost:8000/api/register/', {
                 username,
                 email,
                 password,
+                password2
             });
             const { access, refresh } = response.data;
             setAuthTokens(access, refresh);

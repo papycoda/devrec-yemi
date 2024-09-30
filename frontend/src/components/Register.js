@@ -12,11 +12,12 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
         if (password !== confirmPassword) {
             alert("Passwords don't match");
             return;
         }
-        const success = await register(username, email, password);
+        const success = await register(username, email, password, confirmPassword);
         if (success) {
             navigate('/projects');
         } else {
@@ -125,7 +126,7 @@ const Register = () => {
                         </div>
                         <div className="mt-6">
                             <Link
-                                to="/login"
+                                to="/"
                                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-gray-50"
                             >
                                 Sign in

@@ -20,8 +20,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             "password",
             "password2",
             "email",
-            "first_name",
-            "last_name",
         )
 
     def validate(self, attrs):
@@ -33,13 +31,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        # Remove password2 from the data
         validated_data.pop("password2")
         user = User.objects.create(
             username=validated_data["username"],
             email=validated_data["email"],
-            first_name=validated_data["first_name"],
-            last_name=validated_data["last_name"],
         )
         user.set_password(validated_data["password"])
         user.save()

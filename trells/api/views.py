@@ -5,9 +5,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from .models import Project
+from django.db.models import Q 
 from .serializers import ProjectSerializer, UserSerializer, RegisterSerializer
 
 User = get_user_model()
+
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -17,15 +19,19 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        return Response({
-            "user": {
-                "username": user.username,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
+        return Response(
+            {
+                "user": {
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                },
+                "message": "User created successfully.",
             },
-            "message": "User created successfully."
-        }, status=status.HTTP_201_CREATED)
+            status=status.HTTP_201_CREATED,
+        )
+
 
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
@@ -33,49 +39,38 @@ class UserListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class IsAdminOrAssignedUser(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        """
-        Checks if the user has permission to access the object.
-
-        Parameters:
-            request (Request): The incoming request.
-            view (View): The view being accessed.
-            obj (Object): The object being accessed.
-
-        Returns:
-            bool: True if the user has permission, False otherwise.
-        """
+class IsAdminOrCreatorOrAssignee(permissions.BasePermission):
+    def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
-            return True
+            return request.user.is_authenticated
+        return request.user.is_authenticated
 
-        return request.user.is_staff or obj.assigned_to == request.user
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return (
+                request.user.is_staff
+                or obj.assigned_to == request.user
+                or obj.created_by == request.user
+            )
+        return (
+            request.user.is_staff
+            or obj.assigned_to == request.user
+            or obj.created_by == request.user
+        )
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdminOrAssignedUser]
+    permission_classes = [permissions.IsAuthenticated, IsAdminOrCreatorOrAssignee]
 
     def get_queryset(self):
-        """
-        Retrieves a queryset of Project objects based on the current user's authentication status.
-
-        If the user is authenticated, returns all projects if the user is staff, otherwise returns projects assigned to the user.
-        If the user is not authenticated, returns an empty queryset.
-
-        Parameters:
-            self (ProjectViewSet): The viewset instance.
-
-        Returns:
-            QuerySet: A queryset of Project objects.
-        """
         user = self.request.user
-        if self.request.user.is_authenticated:
-            if user.is_staff:
-                return Project.objects.all()
-            return Project.objects.filter(assigned_to=user)
-        return Project.objects.none()
+        if user.is_staff:
+            return Project.objects.all()
+        return Project.objects.filter(
+            Q(assigned_to=user) | Q(created_by=user)
+        ).distinct()
 
     def perform_create(self, serializer):
         """
@@ -91,19 +86,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
     def check_object_permissions(self, request, obj):
-        """
-        Checks if the user has permission to perform an action on the given object.
-
-        Parameters:
-            request (Request): The incoming request.
-            obj (Object): The object being accessed.
-
-        Raises:
-            PermissionDenied: If the user does not have permission to perform the action.
-        """
-        if self.action in ["update", "partial_update", "destroy"]:
-            if not request.user.is_staff and obj.assigned_to != request.user:
-                raise PermissionDenied(
-                    "You do not have permission to perform this action."
-                )
         super().check_object_permissions(request, obj)
+        if self.action in ["update", "partial_update", "destroy"]:
+            if not request.user.is_staff and obj.created_by != request.user:
+                raise PermissionDenied(
+                    "You do not have permission to modify this project."
+                )
