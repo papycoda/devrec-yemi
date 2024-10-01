@@ -13,7 +13,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('Seeding data...'))
 
         # Create fake users
-        for _ in range(10):  # You can adjust the number of users created
+        for _ in range(10):  
             user = User.objects.create_user(
                 username=faker.user_name(),
                 email=faker.email(),

@@ -21,12 +21,7 @@ class RegisterView(generics.CreateAPIView):
 
         return Response(
             {
-                "user": {
-                    "username": user.username,
-                    "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                },
+                "user": UserSerializer(user).data,
                 "message": "User created successfully.",
             },
             status=status.HTTP_201_CREATED,
