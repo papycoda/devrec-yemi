@@ -19,7 +19,6 @@ const isTokenExpired = (token) => {
         return true;
     }
 };
-
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -123,11 +122,11 @@ export const AuthProvider = ({ children }) => {
                 password,
                 password2
             });
-            const { access, refresh } = response.data;
+            const { access, refresh } = response.data.tokens;
             setAuthTokens(access, refresh);
             return true;
         } catch (error) {
-            console.error('Registration failed:', error);
+            console.error('Registration failed:', error.response ? error.response.data : error.message);
             return false;
         }
     };

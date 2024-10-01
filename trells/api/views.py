@@ -3,9 +3,10 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from .models import Project
-from django.db.models import Q 
+from django.db.models import Q
 from .serializers import ProjectSerializer, UserSerializer, RegisterSerializer
 
 User = get_user_model()
@@ -19,13 +20,24 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        return Response(
-            {
-                "user": UserSerializer(user).data,
-                "message": "User created successfully.",
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        
+        token_serializer = TokenObtainPairSerializer(data={
+            'username': user.username,
+            'password': request.data['password']
+        })
+        if token_serializer.is_valid():
+            tokens = token_serializer.validated_data
+        else:
+            
+            return Response({
+                "error": "Token generation failed"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "user": UserSerializer(user).data,
+            "message": "User created successfully.",
+            "tokens": tokens
+        }, status=status.HTTP_201_CREATED)
 
 
 class UserListView(generics.ListAPIView):
