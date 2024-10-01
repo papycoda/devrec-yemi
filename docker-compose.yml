@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  trells:
+    build: ./trells
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py load_data && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./trells:/app
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - SECRET_KEY=your_secret_key_here
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+
+  frontend:
+    build: ./frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - trells
+
+volumes:
+  data:
